@@ -28,25 +28,32 @@ const Dashboard = () => {
   }, [page, setSearchParams]);
 
   useEffect(() => {
-    const loadProducts = async () => {
+    const loadAllPages = async () => {
       try {
-        const res = await authFetch(`/api/products/paginate?page=${page}`);
+        setProducts([]);
 
-        setProducts((prev) => {
-          const existingIds = new Set(prev.map((p) => p.id));
-          const newProducts = res.data.filter(
-            (p: IProduct) => !existingIds.has(p.id)
-          );
-          return [...prev, ...newProducts];
-        });
+        const requests = Array.from({ length: page }, (_, i) =>
+          authFetch(`/api/products/paginate?page=${i + 1}`)
+        );
 
-        setHasMore(res.current_page < res.last_page);
+        const responses = await Promise.all(requests);
+
+        const allProducts = responses.flatMap((r) => r.data);
+        const unique = Array.from(
+          new Map(allProducts.map((p) => [p.id, p])).values()
+        );
+        console.log(unique);
+        setProducts(unique);
+        setHasMore(
+          responses[responses.length - 1].current_page <
+            responses[responses.length - 1].last_page
+        );
       } catch (err) {
-        console.error("Failed to load products", err);
+        console.error(err);
       }
     };
 
-    loadProducts();
+    loadAllPages();
   }, [page]);
 
   return (
@@ -79,7 +86,17 @@ const Dashboard = () => {
             </div>
           ))}
         </div>
-        <div className="pagination flex  justify-end">
+        <div className="pagination flex gap-5 justify-end">
+          {page != 1 && (
+            <div className="text-center mt-6">
+              <button
+                onClick={() => setPage(page - 1)}
+                className="px-6 py-2 border rounded disabled:opacity-50 text-gray-100 bg-[#792573]"
+              >
+                Load Previous
+              </button>
+            </div>
+          )}
           {hasMore && (
             <div className="text-center mt-6">
               <button
