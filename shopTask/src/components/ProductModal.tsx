@@ -1,5 +1,5 @@
 // components/ProductModal.tsx
-import { useState } from 'react';
+import { useCartStore } from '../store/useCartStore';
 
 interface IProduct {
   id: number;
@@ -15,10 +15,31 @@ interface Props {
 }
 
 const ProductModal = ({ product, onClose }: Props) => {
-  const [quantity, setQuantity] = useState(0);
+  const { cartItems, addToCart, updateQuantity } = useCartStore();
+  
+  const cartItem = cartItems.find(item => item.id === product.id);
+  
+  const cartQuantity = cartItem?.quantity || 0;
 
-  const handleIncrement = () => setQuantity(quantity + 1);
-  const handleDecrement = () => setQuantity(quantity - 1);
+  const handleIncrement = () => {
+    const newQuantity = cartQuantity + 1;
+    if (cartItem) {
+      updateQuantity(product.id, newQuantity);
+    } else {
+      addToCart(product, newQuantity);
+    }
+  };
+
+  const handleDecrement = () => {
+    if (cartQuantity > 0) {
+      const newQuantity = cartQuantity - 1;
+      updateQuantity(product.id, newQuantity);
+    }
+  };
+
+  const handleAddToCart = () => {
+    addToCart(product, 1);
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -53,10 +74,10 @@ const ProductModal = ({ product, onClose }: Props) => {
 
           {/* Add to Cart / Quantity Selector */}
           <div className="flex justify-end">
-            {quantity === 0 ? (
+            {cartQuantity === 0 ? (
               <button
-                onClick={() => setQuantity(1)}
-                className="px-4 py-2 bg-purple-600 text-white rounded"
+                onClick={handleAddToCart}
+                className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
               >
                 Add to cart
               </button>
@@ -64,14 +85,14 @@ const ProductModal = ({ product, onClose }: Props) => {
               <div className="flex items-center gap-2">
                 <button
                   onClick={handleDecrement}
-                  className="px-3 py-1 bg-gray-200 rounded text-black"
+                  className="px-3 py-1 bg-gray-200 rounded text-black hover:bg-gray-300"
                 >
                   -
                 </button>
-                <span className='text-black'>{quantity}</span>
+                <span className='text-black font-semibold'>{cartQuantity}</span>
                 <button
                   onClick={handleIncrement}
-                  className="px-3 py-1 bg-gray-200 rounded text-black"
+                  className="px-3 py-1 bg-gray-200 rounded text-black hover:bg-gray-300"
                 >
                   +
                 </button>
