@@ -1,15 +1,8 @@
-import { useNavigate } from 'react-router-dom';
 import Cart from '../components/Cart';
+import LogOut from '../components/LogOut';
 
 const Navbar = () => {
-  const navigate = useNavigate();
 
-  const handleLogout = () => {
-    localStorage.removeItem('accessToken');
-
-
-    navigate('/login');
-  };
 
 
   return (
@@ -18,12 +11,7 @@ const Navbar = () => {
         <Cart/>
       </div>
       <div>
-        <button
-          onClick={handleLogout}
-          className="text-white font-medium hover:opacity-80 transition bg-[#792573] px-6 py-1 rounded-2xl flex justify-end"
-        >
-          Log out
-        </button>
+        <LogOut/>
       </div>
 
       
