@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { FormInput } from './FormatInput';
 
 interface FormData {
   name: string;
@@ -37,6 +38,40 @@ const RegistrationForm: React.FC = () => {
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const fields = [
+    {
+      name: 'name',
+      type: 'text',
+      placeholder: 'Name',
+    },
+    {
+      name: 'email',
+      type: 'email',
+      placeholder: 'Email',
+    },
+    {
+      name: 'education_start_date',
+      type: 'date',
+      placeholder: 'Education Start Date',
+      showPicker: true,
+    },
+    {
+      name: 'education_end_date',
+      type: 'date',
+      placeholder: 'Education End Date',
+      showPicker: true,
+    },
+    {
+      name: 'password',
+      type: 'password',
+      placeholder: 'Password',
+    },
+    {
+      name: 'password_confirmation',
+      type: 'password',
+      placeholder: 'Confirm Password',
+    },
+  ] as const
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -208,105 +243,17 @@ const RegistrationForm: React.FC = () => {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <input
-              type="text"
-              id="name"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              placeholder="Name"
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 ${
-                errors.name ? 'border-red-500' : 'border-gray-300'
-              }`}
-            />
-            {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
-          </div>
-
-          <div>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              placeholder="Email"
-              value={formData.email}
-              onChange={handleChange}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 ${
-                errors.email ? 'border-red-500' : 'border-gray-300'
-              }`}
-            />
-            {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
-          </div>
-
-          <div>
-            <input
-              type="date"
-              id="education_start_date"
-              name="education_start_date"
-              placeholder='Education Start Date'
-              value={formData.education_start_date}
-              onChange={handleChange}
-              onFocus={(e) => e.target.showPicker?.()}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 placeholder-gray-400 ${
-                errors.education_start_date ? 'border-red-500' : 'border-gray-300'
-              } ${!formData.education_start_date ? 'text-gray-400' : ''}`}
-              style={{ colorScheme: 'light' }}
-            />
-            {errors.education_start_date && (
-              <p className="mt-1 text-sm text-red-600">{errors.education_start_date}</p>
-            )}
-          </div>
-
-          <div>
-            <input
-              type="date"
-              id="education_end_date"
-              name="education_end_date"
-              placeholder='Education End Date'  
-              value={formData.education_end_date}
-              onChange={handleChange}
-              onFocus={(e) => e.target.showPicker?.()}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 placeholder-gray-400 ${
-                errors.education_end_date ? 'border-red-500' : 'border-gray-300'
-              } ${!formData.education_end_date ? 'text-gray-400' : ''}`}
-              style={{ colorScheme: 'light' }}
-            />
-            {errors.education_end_date && (
-              <p className="mt-1 text-sm text-red-600">{errors.education_end_date}</p>
-            )}
-          </div>
-
-          <div>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              placeholder="Password"
-              value={formData.password}
-              onChange={handleChange}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 ${
-                errors.password ? 'border-red-500' : 'border-gray-300'
-              }`}
-            />
-            {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
-          </div>
-
-          <div>
-            <input
-              type="password"
-              id="password_confirmation"
-              name="password_confirmation"
-              placeholder="Confirm Password"
-              value={formData.password_confirmation}
-              onChange={handleChange}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 ${
-                errors.password_confirmation ? 'border-red-500' : 'border-gray-300'
-              }`}
-            />
-            {errors.password_confirmation && (
-              <p className="mt-1 text-sm text-red-600">{errors.password_confirmation}</p>
-            )}
-          </div>
+        {fields.map((field) => (
+        <FormInput
+          key={field.name}
+          type={field.type}
+          name={field.name}
+          placeholder={field.placeholder}
+          value={formData[field.name]}
+          error={errors[field.name]}
+          onChange={handleChange}
+        />
+))}
 
           <div>
             <label className="flex items-start">
