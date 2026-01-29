@@ -2,24 +2,16 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {loginSchema, type LoginFormData} from "../schemas/login.schema";
+import { useLogin } from "../hooks/useAuth";
+import { AxiosError } from "axios";
+import type { ApiError } from "../types/api.types";
 import { FormInput } from "./FormatInput";
+import { type LoginFormData,  loginSchema } from "../schemas/login.schema";
 
 
 const LoginForm: React.FC = () => {
   const navigate = useNavigate();
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [generalError, setGeneralError] = useState<string>("");
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    setError,
-  } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
-    mode: "onBlur",
-  });
 
   const fields = [
     {
@@ -33,54 +25,38 @@ const LoginForm: React.FC = () => {
       placeholder: "Password",
     },
   ];
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setError,
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    mode: "onBlur",
+  });
+
+  const loginMutation = useLogin({
+    onError: (error: AxiosError<ApiError>) => {
+      if (error.response?.data?.errors) {
+        Object.entries(error.response.data.errors).forEach(([key, value]) => {
+          setError(key as keyof LoginFormData, {
+            type: "manual",
+            message: value,
+          });
+        });
+      } else if (error.response?.data?.message) {
+        setGeneralError(error.response.data.message);
+      } else {
+        setGeneralError(
+          "Network error. Please check your connection and try again."
+        );
+      }
+    },
+  });
 
   const onSubmit = async (data: LoginFormData) => {
     setGeneralError("");
-    setIsSubmitting(true);
-
-    try {
-      const response = await fetch("/api/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      });
-
-      const responseData = await response.json();
-
-      if (!response.ok) {
-        if (responseData.errors) {
-          Object.keys(responseData.errors).forEach((key) => {
-            setError(key as keyof LoginFormData, {
-              type: "manual",
-              message: responseData.errors[key],
-            });
-          });
-        } else {
-          setGeneralError(
-            responseData.message || "Login failed. Please try again."
-          );
-        }
-      } else {
-        if (responseData.accessToken || responseData.access_token) {
-          const token = responseData.accessToken || responseData.access_token;
-          localStorage.setItem("accessToken", token);
-
-          if (responseData.user) {
-            localStorage.setItem("user", JSON.stringify(responseData.user));
-          }
-          navigate("/dashboard");
-        }
-      }
-    } catch (error) {
-      setGeneralError(
-        "Network error. Please check your connection and try again."
-      );
-      console.error(error);
-    } finally {
-      setIsSubmitting(false);
-    }
+    loginMutation.mutate(data);
   };
 
   return (
@@ -114,10 +90,10 @@ const LoginForm: React.FC = () => {
 
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={loginMutation.isPending}
             className="w-full bg-[#792573] text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {isSubmitting ? "Logging in..." : "Login"}
+            {loginMutation.isPending ? "Logging in..." : "Login"}
           </button>
 
           <div className="text-center mt-4">

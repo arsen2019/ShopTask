@@ -1,6 +1,8 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
+import { useRegister } from "../hooks/useAuth";
+import { AxiosError } from "axios";
+import type { ApiError } from "../types/api.types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FormInput } from "./FormatInput";
 import { registrationSchema, type RegistrationFormData } from "../schemas/register.schema";
@@ -8,9 +10,6 @@ import { registrationSchema, type RegistrationFormData } from "../schemas/regist
 
 
 const RegistrationForm: React.FC = () => {
-  const navigate = useNavigate();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitSuccess, setSubmitSuccess] = useState(false);
   const [generalError, setGeneralError] = useState<string>("");
 
   const {
@@ -18,7 +17,6 @@ const RegistrationForm: React.FC = () => {
     handleSubmit,
     formState: { errors },
     setError,
-    reset,
   } = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationSchema),
     mode: "onBlur",
@@ -57,57 +55,28 @@ const RegistrationForm: React.FC = () => {
     },
   ];
 
-  const onSubmit = async (data: RegistrationFormData) => {
-    setSubmitSuccess(false);
-    setGeneralError("");
-    setIsSubmitting(true);
-
-    try {
-      const response = await fetch("api/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      });
-
-      const responseData = await response.json();
-
-      if (!response.ok) {
-        if (responseData.errors) {
-          Object.keys(responseData.errors).forEach((key) => {
-            const formKey = key.replace(/_([a-z])/g, (g: string) => g[1].toUpperCase());
-            setError(formKey as keyof RegistrationFormData, {
-              type: "manual",
-              message: responseData.errors[key],
-            });
+  const registerMutation = useRegister({
+    onError: (error: AxiosError<ApiError>) => {
+      if (error.response?.data?.errors) {
+        Object.entries(error.response.data.errors).forEach(([key, value]) => {
+          setError(key as keyof RegistrationFormData, {
+            type: "manual",
+            message: value,
           });
-        } else {
-          setGeneralError(responseData.message || "Registration failed. Please try again.");
-        }
+        });
+      } else if (error.response?.data?.message) {
+        setGeneralError(error.response.data.message);
       } else {
-        if (responseData.accessToken || responseData.access_token) {
-          const token = responseData.accessToken || responseData.access_token;
-          localStorage.setItem("accessToken", token);
-
-          if (responseData.user) {
-            localStorage.setItem("user", JSON.stringify(responseData.user));
-          }
-        }
-
-        setSubmitSuccess(true);
-        reset();
-
-        setTimeout(() => {
-          navigate("/dashboard");
-        }, 1500);
+        setGeneralError(
+          "Network error. Please check your connection and try again."
+        );
       }
-    } catch (error) {
-      setGeneralError("Network error. Please check your connection and try again.");
-      console.error(error);
-    } finally {
-      setIsSubmitting(false);
-    }
+    },
+  });
+
+  const onSubmit = async (data: RegistrationFormData) => {
+    setGeneralError("");
+    registerMutation.mutate(data);
   };
 
   return (
@@ -117,7 +86,7 @@ const RegistrationForm: React.FC = () => {
           Register
         </h2>
 
-        {submitSuccess && (
+        {registerMutation.isPending && (
           <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-md">
             <p className="text-green-800 text-sm">
               Registration successful! Redirecting...
@@ -164,10 +133,10 @@ const RegistrationForm: React.FC = () => {
 
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={registerMutation.isPending}
             className="w-full bg-[#792573] text-white py-2 px-4 rounded-md hover:bg-[#7925749f] focus:outline-none focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {isSubmitting ? "Registering..." : "Get Started"}
+            {registerMutation.isPending ? "Registering..." : "Get Started"}
           </button>
         </form>
       </div>
