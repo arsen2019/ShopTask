@@ -1,28 +1,28 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { QueryProvider } from './providers/QueryProvider';
-import Dashboard from './components/Dashboard';
-import RegistrationForm from './components/RegistrationForm';
-import LoginForm from './components/LoginForm';
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { QueryProvider } from "./providers/QueryProvider";
+import Dashboard from "./components/Dashboard";
+import RegistrationForm from "./components/forms/components/RegistrationForm";
+import LoginForm from "./components/forms/components/LoginForm";
 
 // Protected Route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const token = localStorage.getItem('accessToken');
-  
+  const token = localStorage.getItem("accessToken");
+
   if (!token) {
     return <Navigate to="/login" replace />;
   }
-  
+
   return <>{children}</>;
 };
 
 // Public Route component (redirect to dashboard if already logged in)
 const PublicRoute = ({ children }: { children: React.ReactNode }) => {
-  const token = localStorage.getItem('accessToken');
-  
+  const token = localStorage.getItem("accessToken");
+
   if (token) {
     return <Navigate to="/dashboard" replace />;
   }
-  
+
   return <>{children}</>;
 };
 
@@ -33,36 +33,36 @@ function App() {
       <QueryProvider>
         <Routes>
           {/* Public routes */}
-          <Route 
-            path="/register" 
+          <Route
+            path="/register"
             element={
               <PublicRoute>
                 <RegistrationForm />
               </PublicRoute>
-            } 
+            }
           />
-          <Route 
-            path="/login" 
+          <Route
+            path="/login"
             element={
               <PublicRoute>
                 <LoginForm />
               </PublicRoute>
-            } 
+            }
           />
-          
+
           {/* Protected routes */}
-          <Route 
-            path="/dashboard" 
+          <Route
+            path="/dashboard"
             element={
               <ProtectedRoute>
                 <Dashboard />
               </ProtectedRoute>
-            } 
+            }
           />
-          
+
           {/* Default redirect */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          
+
           {/* 404 */}
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>

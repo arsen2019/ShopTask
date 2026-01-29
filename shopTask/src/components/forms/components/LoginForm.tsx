@@ -2,29 +2,17 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useLogin } from "../hooks/useAuth";
+import { useLogin } from "../../../hooks/useAuth";
 import { AxiosError } from "axios";
-import type { ApiError } from "../types/api.types";
+import type { ApiError } from "../../../types/api.types";
 import { FormInput } from "./FormatInput";
-import { type LoginFormData,  loginSchema } from "../schemas/login.schema";
-
+import { type LoginFormData, loginSchema } from "../../../schemas/login.schema";
+import { loginFields } from "../form.fields";
 
 const LoginForm: React.FC = () => {
   const navigate = useNavigate();
   const [generalError, setGeneralError] = useState<string>("");
 
-  const fields = [
-    {
-      name: "email" as const,
-      type: "email" as const,
-      placeholder: "Email",
-    },
-    {
-      name: "password" as const,
-      type: "password" as const,
-      placeholder: "Password",
-    },
-  ];
   const {
     register,
     handleSubmit,
@@ -77,7 +65,7 @@ const LoginForm: React.FC = () => {
           className="space-y-4"
           noValidate
         >
-          {fields.map((field) => (
+          {loginFields.map((field) => (
             <FormInput
               key={field.name}
               type={field.type}

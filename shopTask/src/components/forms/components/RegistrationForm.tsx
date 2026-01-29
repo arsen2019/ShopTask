@@ -1,13 +1,15 @@
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
-import { useRegister } from "../hooks/useAuth";
+import { useRegister } from "../../../hooks/useAuth";
 import { AxiosError } from "axios";
-import type { ApiError } from "../types/api.types";
+import type { ApiError } from "../../../types/api.types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FormInput } from "./FormatInput";
-import { registrationSchema, type RegistrationFormData } from "../schemas/register.schema";
-
-
+import {
+  registrationSchema,
+  type RegistrationFormData,
+} from "../../../schemas/register.schema";
+import { registrationFields } from "../form.fields";
 
 const RegistrationForm: React.FC = () => {
   const [generalError, setGeneralError] = useState<string>("");
@@ -21,39 +23,6 @@ const RegistrationForm: React.FC = () => {
     resolver: zodResolver(registrationSchema),
     mode: "onBlur",
   });
-
-  const fields = [
-    {
-      name: "name" as const,
-      type: "text" as const,
-      placeholder: "Name",
-    },
-    {
-      name: "email" as const,
-      type: "email" as const,
-      placeholder: "Email",
-    },
-    {
-      name: "education_start_date" as const,
-      type: "date" as const,
-      placeholder: "Education Start Date",
-    },
-    {
-      name: "education_end_date" as const,
-      type: "date" as const,
-      placeholder: "Education End Date",
-    },
-    {
-      name: "password" as const,
-      type: "password" as const,
-      placeholder: "Password",
-    },
-    {
-      name: "password_confirmation" as const,
-      type: "password" as const,
-      placeholder: "Confirm Password",
-    },
-  ];
 
   const registerMutation = useRegister({
     onError: (error: AxiosError<ApiError>) => {
@@ -100,8 +69,12 @@ const RegistrationForm: React.FC = () => {
           </div>
         )}
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
-          {fields.map((field) => (
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="space-y-4"
+          noValidate
+        >
+          {registrationFields.map((field) => (
             <FormInput
               key={field.name}
               type={field.type}
@@ -127,7 +100,9 @@ const RegistrationForm: React.FC = () => {
               </span>
             </label>
             {errors.terms && (
-              <p className="mt-1 text-sm text-red-600">{errors.terms.message}</p>
+              <p className="mt-1 text-sm text-red-600">
+                {errors.terms.message}
+              </p>
             )}
           </div>
 
