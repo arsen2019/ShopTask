@@ -7,7 +7,8 @@ export const productsApi = {
     const response = await api.get<PaginatedProductsResponse>(
       `/api/products/paginate?page=${page}`
     );
-    return response.data;
+
+    return response?.data ?? [];
   },
 
 };

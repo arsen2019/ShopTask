@@ -1,7 +1,7 @@
 // components/Cart.tsx
-import { useState } from 'react';
-import { useCartStore } from '../store/useCartStore';
-import { ShoppingCart, X, Trash2 } from 'lucide-react';
+import { useState } from "react";
+import { useCartStore } from "../store/useCartStore";
+import { ShoppingCart, X, Trash2 } from "lucide-react";
 
 const Cart = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -53,7 +53,7 @@ const Cart = () => {
                       <div className="flex-1">
                         <h4 className="font-semibold text-black">{item.name}</h4>
                         <p className="text-gray-600 text-sm">${item.price}</p>
-                        
+
                         <div className="flex items-center gap-2 mt-2">
                           <button
                             onClick={() => updateQuantity(item.id, item.quantity - 1)}
@@ -92,7 +92,7 @@ const Cart = () => {
                       ${getTotalPrice().toFixed(2)}
                     </span>
                   </div>
-                  
+
                   <div className="flex gap-2">
                     <button
                       onClick={clearCart}
@@ -114,6 +114,8 @@ const Cart = () => {
       </div>
     </>
   );
+
+  return <div></div>;
 };
 
 export default Cart;

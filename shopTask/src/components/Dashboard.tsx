@@ -1,49 +1,26 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import Navbar from "../layouts/Navbar";
 import ProductModal from "../components/ProductModal";
-import { useInfiniteProducts } from "../hooks/useProducts";
+import { useProductsPage } from "../hooks/useProducts";
 import type { IProduct } from "../types/api.types";
-
-// const PAGE_SIZE = 2;
 
 const Dashboard = () => {
   const [selectedProduct, setSelectedProduct] = useState<IProduct | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const initialPageFromUrl = Number(searchParams.get("page")) || 1;
+  const currentPage = Number(searchParams.get("page")) || 1;
 
-  const { data, fetchNextPage, hasNextPage, isLoading, isFetchingNextPage } =
-    useInfiniteProducts();
+  const { products, isLoading, isFetching, lastPage } =
+    useProductsPage(currentPage);
 
-  const [visiblePages, setVisiblePages] = useState(initialPageFromUrl);
-  const totalPages = data?.pages[0]?.last_page ?? 0;
-
-  const canLoadMore = visiblePages < totalPages;
-  const canLoadPrevious = visiblePages > 1;
-
-  const allProducts = useMemo<IProduct[]>(() => {
-    if (!data) return [];
-
-    return data.pages.slice(0, visiblePages).flatMap((page) => page.data);
-  }, [data, visiblePages]);
-
-  const handleLoadMore = async () => {
-    if (visiblePages >= (data?.pages.length ?? 0) && hasNextPage) {
-      await fetchNextPage();
-    }
-
-    setVisiblePages((prev) => prev + 1);
-    setSearchParams({ page: String(visiblePages + 1) });
+  const handleLoadMore = () => {
+    setSearchParams({ page: String(currentPage + 1) });
   };
 
-  const handleLoadPrevious = () => {
-    if (visiblePages <= 1) return;
-
-    setVisiblePages((prev) => prev - 1);
-    setSearchParams({ page: String(visiblePages - 1) });
-  };
-
+  const canLoadMore = currentPage < lastPage;
+  console.log(products);
+  console.log(lastPage);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -60,7 +37,7 @@ const Dashboard = () => {
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {allProducts.map((product) => (
+              {products.map((product) => (
                 <div key={product.id} className="border rounded-lg p-4 shadow">
                   <img
                     src={`http://localhost:4000${product.picture}`}
@@ -86,33 +63,22 @@ const Dashboard = () => {
               ))}
             </div>
 
-            {isFetchingNextPage && (
+            {isFetching && (
               <div className="text-center py-4">
                 <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600" />
-                <p className="text-gray-600 mt-2">Loading more products...</p>
               </div>
             )}
 
-            <div className="pagination flex gap-5 justify-end mt-6">
-              {canLoadPrevious && (
-                <button
-                  onClick={handleLoadPrevious}
-                  className="px-6 py-2 border rounded text-gray-100 bg-[#792573] hover:bg-[#7925749f]"
-                >
-                  Load Previous
-                </button>
-              )}
-
-              {canLoadMore && (
+            {canLoadMore && (
+              <div className="flex justify-end mt-6">
                 <button
                   onClick={handleLoadMore}
-                  disabled={isFetchingNextPage}
-                  className="px-6 py-2 border rounded disabled:opacity-50 text-gray-100 bg-[#792573] hover:bg-[#7925749f]"
+                  className="px-6 py-2 border rounded text-gray-100 bg-[#792573]"
                 >
-                  {isFetchingNextPage ? "Loading..." : "Load More"}
+                  Load More
                 </button>
-              )}
-            </div>
+              </div>
+            )}
           </>
         )}
 

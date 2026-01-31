@@ -16,9 +16,6 @@ export const useRegister = (
       if (token) {
         localStorage.setItem('accessToken', token);
       }
-      if (data.user) {
-        localStorage.setItem('user', JSON.stringify(data.user));
-      }
       
       setTimeout(() => {
         navigate('/dashboard');
@@ -39,9 +36,6 @@ export const useLogin = (
       const token = data.accessToken || data.access_token;
       if (token) {
         localStorage.setItem('accessToken', token);
-      }
-      if (data.user) {
-        localStorage.setItem('user', JSON.stringify(data.user));
       }
       
       navigate('/dashboard');

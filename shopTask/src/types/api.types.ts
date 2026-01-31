@@ -14,18 +14,9 @@ export interface IProduct {
     total: number;
   }
   
-  export interface User {
-    id: number;
-    name: string;
-    email: string;
-    education_start_date?: string;
-    education_end_date?: string;
-  }
-  
   export interface AuthResponse {
     accessToken?: string;
     access_token?: string;
-    user?: User;
     message?: string;
   }
   

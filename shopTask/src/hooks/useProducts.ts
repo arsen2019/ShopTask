@@ -1,35 +1,72 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
-import type { InfiniteData } from '@tanstack/react-query';
-import type { PaginatedProductsResponse } from '../types/api.types';
-import { productsApi } from '../api/services/products.service';
-import { queryKeys } from '../api/queryKeys';
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { productsApi } from "../api/services/products.service";
+import type {
+  PaginatedProductsResponse,
+  IProduct,
+} from "../types/api.types";
 
-export const useInfiniteProducts = () => {
-  return useInfiniteQuery<
-    PaginatedProductsResponse, 
-    Error,                    
-    InfiniteData<PaginatedProductsResponse>,
-    ReturnType<typeof queryKeys.products.infinite>,
-    number
-  >({
-    queryKey: queryKeys.products.infinite(),
-    initialPageParam: 1,
+type ProductsCache = {
+  items: IProduct[];
+  loadedPages: number[];
+  lastPage: number;
+};
 
-    queryFn: ({ pageParam }) =>
-      productsApi.getPaginatedProducts(pageParam),
+export const useProductsPage = (page: number) => {
+  const queryClient = useQueryClient();
 
-    getNextPageParam: (lastPage) =>
-      lastPage.current_page < lastPage.last_page
-        ? lastPage.current_page + 1
-        : undefined,
+  const query = useQuery<ProductsCache>({
+    queryKey: ["products", page],
 
-    getPreviousPageParam: (firstPage) =>
-      firstPage.current_page > 1
-        ? firstPage.current_page - 1
-        : undefined,
+    placeholderData: () =>
+      queryClient.getQueryData<ProductsCache>(["products"]),
 
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
-    retry: 2,
+    queryFn: async () => {
+      const cached = queryClient.getQueryData<ProductsCache>(["products"]);
+
+      const loadedPages = cached?.loadedPages ?? [];
+      const items = cached?.items ?? [];
+
+      const pagesToFetch: number[] = [];
+
+      for (let p = 1; p <= page; p++) {
+        if (!loadedPages.includes(p)) {
+          pagesToFetch.push(p);
+        }
+      }
+
+      if (pagesToFetch.length === 0 && cached) {
+        return cached;
+      }
+
+      let newItems: IProduct[] = [];
+      let lastPageFromApi = cached?.lastPage ?? page;
+
+      for (const p of pagesToFetch) {
+        const response: PaginatedProductsResponse =
+          await productsApi.getPaginatedProducts(p);
+
+        newItems = [...newItems, ...response.data];
+        lastPageFromApi = response.last_page;
+      }
+
+      const merged: ProductsCache = {
+        items: [...items, ...newItems],
+        loadedPages: [...loadedPages, ...pagesToFetch],
+        lastPage: lastPageFromApi,
+      };
+
+      queryClient.setQueryData(["products"], merged);
+
+      return merged; 
+    },
+
+    staleTime: Infinity,
   });
+
+  return {
+    products: query.data?.items ?? [],
+    lastPage: query.data?.lastPage ?? 1,
+    isFetching: query.isFetching,
+    isLoading: query.isLoading,
+  };
 };
