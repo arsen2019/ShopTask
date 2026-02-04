@@ -1,72 +1,64 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { productsApi } from "../api/services/products.service";
-import type {
-  PaginatedProductsResponse,
-  IProduct,
-} from "../types/api.types";
+import type { IProduct } from "../types/api.types";
 
-type ProductsCache = {
+type ProductsState = {
   items: IProduct[];
-  loadedPages: number[];
+  currentPage: number;
   lastPage: number;
 };
 
-export const useProductsPage = (page: number) => {
+const INITIAL_STATE: ProductsState = {
+  items: [],
+  currentPage: 0,
+  lastPage: 1,
+};
+
+const PRODUCTS_KEY = ["products"] as const;
+
+export const useProductsPage = () => {
   const queryClient = useQueryClient();
 
-  const query = useQuery<ProductsCache>({
-    queryKey: ["products", page],
-
-    placeholderData: () =>
-      queryClient.getQueryData<ProductsCache>(["products"]),
-
+  const { data: state = INITIAL_STATE, isLoading } = useQuery({
+    queryKey: PRODUCTS_KEY,
     queryFn: async () => {
-      const cached = queryClient.getQueryData<ProductsCache>(["products"]);
-
-      const loadedPages = cached?.loadedPages ?? [];
-      const items = cached?.items ?? [];
-
-      const pagesToFetch: number[] = [];
-
-      for (let p = 1; p <= page; p++) {
-        if (!loadedPages.includes(p)) {
-          pagesToFetch.push(p);
-        }
-      }
-
-      if (pagesToFetch.length === 0 && cached) {
-        return cached;
-      }
-
-      let newItems: IProduct[] = [];
-      let lastPageFromApi = cached?.lastPage ?? page;
-
-      for (const p of pagesToFetch) {
-        const response: PaginatedProductsResponse =
-          await productsApi.getPaginatedProducts(p);
-
-        newItems = [...newItems, ...response.data];
-        lastPageFromApi = response.last_page;
-      }
-
-      const merged: ProductsCache = {
-        items: [...items, ...newItems],
-        loadedPages: [...loadedPages, ...pagesToFetch],
-        lastPage: lastPageFromApi,
+      const response = await productsApi.getPaginatedProducts(1);
+      return {
+        items: response.data,
+        currentPage: response.current_page,
+        lastPage: response.last_page,
       };
-
-      queryClient.setQueryData(["products"], merged);
-
-      return merged; 
     },
-
-    staleTime: Infinity,
   });
 
+  const loadMoreMutation = useMutation({
+    mutationFn: async () => {
+      const currentState =
+        queryClient.getQueryData<ProductsState>(PRODUCTS_KEY);
+      if (!currentState) throw new Error("No current state");
+
+      const nextPage = currentState.currentPage + 1;
+      return productsApi.getPaginatedProducts(nextPage);
+    },
+    onSuccess: (response) => {
+      queryClient.setQueryData<ProductsState>(PRODUCTS_KEY, (old) => {
+        if (!old) return INITIAL_STATE; 
+        return {
+          items: [...old.items, ...response.data],
+          currentPage: response.current_page,
+          lastPage: response.last_page,
+        };
+      });
+    },
+  });
+
+  const canLoadMore = state.currentPage < state.lastPage;
+
   return {
-    products: query.data?.items ?? [],
-    lastPage: query.data?.lastPage ?? 1,
-    isFetching: query.isFetching,
-    isLoading: query.isLoading,
+    products: state.items,
+    loadMore: loadMoreMutation.mutate,
+    isLoading,
+    isFetching: loadMoreMutation.isPending,
+    canLoadMore,
   };
 };

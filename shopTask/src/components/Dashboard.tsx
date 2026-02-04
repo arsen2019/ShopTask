@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useEffect, useState } from "react";
 import Navbar from "../layouts/Navbar";
 import ProductModal from "../components/ProductModal";
 import { useProductsPage } from "../hooks/useProducts";
@@ -7,20 +6,12 @@ import type { IProduct } from "../types/api.types";
 
 const Dashboard = () => {
   const [selectedProduct, setSelectedProduct] = useState<IProduct | null>(null);
-  const [searchParams, setSearchParams] = useSearchParams();
 
-  const currentPage = Number(searchParams.get("page")) || 1;
+  const { products, loadMore, isLoading, isFetching, canLoadMore } =useProductsPage();
 
-  const { products, isLoading, isFetching, lastPage } =
-    useProductsPage(currentPage);
-
-  const handleLoadMore = () => {
-    setSearchParams({ page: String(currentPage + 1) });
-  };
-
-  const canLoadMore = currentPage < lastPage;
-  console.log(products);
-  console.log(lastPage);
+  // useEffect(() => {
+  //   loadMore();
+  // }, []);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -54,7 +45,7 @@ const Dashboard = () => {
 
                     <button
                       onClick={() => setSelectedProduct(product)}
-                      className="mt-2 bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition-colors"
+                      className="mt-2 bg-purple-600 text-white px-4 py-2 rounded"
                     >
                       Details
                     </button>
@@ -72,7 +63,7 @@ const Dashboard = () => {
             {canLoadMore && (
               <div className="flex justify-end mt-6">
                 <button
-                  onClick={handleLoadMore}
+                  onClick={() => loadMore()}
                   className="px-6 py-2 border rounded text-gray-100 bg-[#792573]"
                 >
                   Load More
